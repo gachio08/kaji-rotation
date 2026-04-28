@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#f59e0b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="家事担当">
+  <title>家事担当表</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+      background: #fef3c7;
+      min-height: 100vh;
+      color: #1a202c;
+    }
+
+    header {
+      background: #f59e0b;
+      color: white;
+      padding: 16px 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    header p {
+      font-size: 13px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .week-label {
+      text-align: center;
+      font-size: 13px;
+      color: #92400e;
+      font-weight: 600;
+      margin-bottom: 12px;
+      background: #fde68a;
+      border-radius: 20px;
+      padding: 6px 16px;
+      display: inline-block;
+    }
+
+    .week-label-wrap {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #92400e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    /* 今週カード */
+    .this-week {
+      margin-bottom: 20px;
+    }
+
+    .person-card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-left: 5px solid;
+    }
+
+    .person-initial {
+      font-size: 32px;
+      font-weight: 900;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: white;
+    }
+
+    .person-info {
+      flex: 1;
+    }
+
+    .person-name {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .chore-name {
+      font-size: 20px;
+      font-weight: bold;
+      color: #1a202c;
+    }
+
+    .chore-emoji {
+      font-size: 36px;
+      flex-shrink: 0;
+    }
+
+    /* 来週プレビュー */
+    .next-week {
+      background: white;
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    .next-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .next-row:last-child { border-bottom: none; }
+
+    .next-person {
+      font-size: 16px;
+      font-weight: 700;
+      width: 28px;
+    }
+
+    .next-chore {
+      flex: 1;
+      font-size: 15px;
+      color: #374151;
+      padding-left: 12px;
+    }
+
+    .next-emoji {
+      font-size: 22px;
+    }
+
+    /* 色定義 */
+    .color-y { background: #3b82f6; border-color: #3b82f6; }
+    .color-s { background: #10b981; border-color: #10b981; }
+    .color-k { background: #f43f5e; border-color: #f43f5e; }
+
+    .border-y { border-left-color: #3b82f6; }
+    .border-s { border-left-color: #10b981; }
+    .border-k { border-left-color: #f43f5e; }
+
+    .text-y { color: #3b82f6; }
+    .text-s { color: #10b981; }
+    .text-k { color: #f43f5e; }
+
+    footer {
+      text-align: center;
+      color: #a78bfa;
+      font-size: 11px;
+      padding: 24px 0 32px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏠 家事担当表</h1>
+  <p>がっちゃん も待ってるよ 🐱</p>
+</header>
+
+<div class="container">
+
+  <div class="week-label-wrap">
+    <span class="week-label" id="weekLabel">読み込み中...</span>
+  </div>
+
+  <div class="section-title">今週の担当</div>
+  <div class="this-week" id="thisWeek"></div>
+
+  <div class="section-title">来週のプレビュー</div>
+  <div class="next-week" id="nextWeek"></div>
+
+</div>
+
+<footer>毎週日曜日に自動で切り替わります</footer>
+
+<script>
+  // 基準日：2026-04-19（日）Y=洗濯, S=風呂, K=餌やり
+  const REFERENCE = new Date('2026-04-19T00:00:00');
+
+  const PEOPLE = [
+    { key: 'y', name: 'Y' },
+    { key: 's', name: 'S' },
+    { key: 'k', name: 'K' }
+  ];
+
+  // 週0での担当順：洗濯→風呂→餌やり（Y→S→K）
+  const CHORES = [
+    { name: '洗濯物たたむ', emoji: '👕' },
+    { name: '風呂掃除',     emoji: '🛁' },
+    { name: 'がっちゃんの餌やり', emoji: '🐱' }
+  ];
+
+  function getSunday(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay());
+    return d;
+  }
+
+  function getWeekNum(sunday) {
+    const diff = sunday - REFERENCE;
+    return Math.round(diff / (7 * 24 * 60 * 60 * 1000));
+  }
+
+  function getAssignments(weekNum) {
+    return PEOPLE.map((person, i) => ({
+      ...person,
+      chore: CHORES[(weekNum + i) % 3]
+    }));
+  }
+
+  function formatDateRange(sunday) {
+    const sat = new Date(sunday);
+    sat.setDate(sunday.getDate() + 6);
+    const fmt = d => `${d.getMonth() + 1}/${d.getDate()}`;
+    return `${sunday.getFullYear()}年 ${fmt(sunday)}（日）〜 ${fmt(sat)}（土）`;
+  }
+
+  function render() {
+    const now = new Date();
+    const thisSun = getSunday(now);
+    const nextSun = new Date(thisSun);
+    nextSun.setDate(thisSun.getDate() + 7);
+
+    const thisWeekNum = getWeekNum(thisSun);
+    const nextWeekNum = thisWeekNum + 1;
+
+    document.getElementById('weekLabel').textContent = formatDateRange(thisSun);
+
+    // 今週
+    const thisAssign = getAssignments(thisWeekNum);
+    const thisEl = document.getElementById('thisWeek');
+    thisEl.innerHTML = '';
+    thisAssign.forEach(a => {
+      const div = document.createElement('div');
+      div.className = `person-card border-${a.key}`;
+      div.innerHTML = `
+        <div class="person-initial color-${a.key}">${a.name}</div>
+        <div class="person-info">
+          <div class="person-name">担当</div>
+          <div class="chore-name">${a.chore.name}</div>
+        </div>
+        <div class="chore-emoji">${a.chore.emoji}</div>
+      `;
+      thisEl.appendChild(div);
+    });
+
+    // 来週
+    const nextAssign = getAssignments(nextWeekNum);
+    const nextEl = document.getElementById('nextWeek');
+    nextEl.innerHTML = `<div class="section-title" style="margin-bottom:8px;font-size:11px;color:#94a3b8;">${formatDateRange(nextSun)}</div>`;
+    nextAssign.forEach(a => {
+      const row = document.createElement('div');
+      row.className = 'next-row';
+      row.innerHTML = `
+        <div class="next-person text-${a.key}">${a.name}</div>
+        <div class="next-chore">${a.chore.name}</div>
+        <div class="next-emoji">${a.chore.emoji}</div>
+      `;
+      nextEl.appendChild(row);
+    });
+  }
+
+  render();
+</script>
+
+</body>
+</html>
